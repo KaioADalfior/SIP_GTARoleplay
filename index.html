@@ -6,19 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PCESP - Sistema de Inteligência</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600&display=swap"
+        rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root {
             --primary-bg: #f1f5f9;
-            --sidebar-bg: #1a1a1a; /* Preto Policial */
-            --police-red: #d90429;  /* Vermelho Alerta */
+            --sidebar-bg: #1a1a1a;
+            --police-red: #d90429;
             --text-main: #000000;
             --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
@@ -30,9 +29,11 @@
             overflow-x: hidden;
         }
 
-        .wrapper { display: flex; min-height: 100vh; }
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
 
-        /* Sidebar - Preto */
         #sidebar {
             min-width: 260px;
             max-width: 260px;
@@ -65,14 +66,19 @@
             font-weight: 500;
         }
 
-        #sidebar ul li a:hover, #sidebar ul li a.active {
+        #sidebar ul li a:hover,
+        #sidebar ul li a.active {
             color: #fff;
             background: #2a2a2a;
             border-left: 5px solid var(--police-red);
         }
 
-        /* Content Area */
-        #content { width: 100%; padding: 2rem; display: flex; flex-direction: column; }
+        #content {
+            width: 100%;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
 
         .top-nav {
             background: #fff;
@@ -86,7 +92,6 @@
             border-left: 8px solid var(--sidebar-bg);
         }
 
-        /* Card Branco */
         .card {
             border: none;
             border-radius: 8px;
@@ -103,7 +108,6 @@
             font-size: 0.9rem;
         }
 
-        /* Botão Vermelho Laravel Style */
         .btn-police {
             background-color: var(--police-red);
             color: #ffffff;
@@ -158,7 +162,8 @@
         <nav id="sidebar">
             <div class="sidebar-header">
                 <h3>POLÍCIA CIVIL</h3>
-                <small style="color: var(--police-red); font-weight: bold; letter-spacing: 1px;">ESTADO DE SÃO PAULO</small>
+                <small style="color: var(--police-red); font-weight: bold; letter-spacing: 1px;">ESTADO DE SÃO
+                    PAULO</small>
             </div>
             <ul class="list-unstyled components">
                 <li><a href="index.html" class="active"><i class="fa-solid fa-shield-halved"></i> Dashboard</a></li>
@@ -168,7 +173,8 @@
 
         <div id="content">
             <div class="top-nav">
-                <h4 class="m-0 fw-bold"><i class="fa-solid fa-magnifying-glass me-2"></i>S.I.P - Sistema de Investigação</h4>
+                <h4 class="m-0 fw-bold"><i class="fa-solid fa-magnifying-glass me-2"></i>S.I.P - Sistema de Investigação
+                </h4>
                 <button class="btn btn-police" onclick="abrirCadastro()">
                     <i class="fa-solid fa-plus me-2"></i> Novo Registro
                 </button>
@@ -181,7 +187,7 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Protocolo</th>
                                     <th>Investigado</th>
                                     <th>Documento</th>
                                     <th>Agente Requerente</th>
@@ -201,45 +207,74 @@
         </div>
     </div>
 
-    <script>
-        let investigacoes = JSON.parse(localStorage.getItem("investigacoesGTA")) || [];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, Timestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        function salvar() {
-            localStorage.setItem("investigacoesGTA", JSON.stringify(investigacoes));
-        }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm3SpEYN7aqUheSL5ViiCMD58HPEd5Gec",
+            authDomain: "sistema-policial-rp.firebaseapp.com",
+            projectId: "sistema-policial-rp",
+            storageBucket: "sistema-policial-rp.firebasestorage.app",
+            messagingSenderId: "830142153757",
+            appId: "1:830142153757:web:e675013c180fbaac9ab2f4"
+        };
 
-        function atualizarTabela() {
-            let tbody = document.getElementById("tabelaInvestigacoes");
-            tbody.innerHTML = "";
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const colRef = collection(db, "investigacoes");
 
-            if(investigacoes.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted small">Nenhum inquérito registrado no sistema.</td></tr>`;
-                return;
+        let investigacoesLocais = [];
+
+        async function atualizarTabela() {
+            const tbody = document.getElementById("tabelaInvestigacoes");
+            tbody.innerHTML = "<tr><td colspan='5' class='text-center py-5'>Carregando dados...</td></tr>";
+
+            try {
+                const q = query(colRef, orderBy("dataRegistro", "desc"));
+                const querySnapshot = await getDocs(q);
+                investigacoesLocais = [];
+                tbody.innerHTML = "";
+
+                if (querySnapshot.empty) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted small">Nenhum inquérito registrado no sistema.</td></tr>`;
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const inv = doc.data();
+                    const id = doc.id;
+                    investigacoesLocais.push({ ...inv, idFirestore: id });
+
+                    tbody.innerHTML += `
+                    <tr>
+                        <td><span class="badge bg-dark">#${id.substring(0, 5).toUpperCase()}</span></td>
+                        <td>
+                            <div class="fw-bold text-uppercase">${inv.investigado_nome}</div>
+                            <small class="text-danger">Vulgo: ${inv.investigado_vulgo || 'DESCONHECIDO'}</small>
+                        </td>
+                        <td><code>${inv.investigado_doc}</code></td>
+                        <td><i class="fa-solid fa-id-badge me-1"></i> ${inv.policial_nome}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-dark me-1 btn-visualizar" data-id="${id}"><i class="fa-solid fa-file-lines"></i></button>
+                            <button class="btn btn-sm btn-outline-danger btn-remover" data-id="${id}"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>`;
+                });
+
+                document.querySelectorAll('.btn-visualizar').forEach(btn => btn.onclick = () => visualizar(btn.getAttribute('data-id')));
+                document.querySelectorAll('.btn-remover').forEach(btn => btn.onclick = () => remover(btn.getAttribute('data-id')));
+
+            } catch (e) {
+                console.error("Erro ao ler banco: ", e);
             }
-
-            investigacoes.forEach((inv, index) => {
-                tbody.innerHTML += `
-                <tr>
-                    <td><span class="badge bg-dark">#${index + 101}</span></td>
-                    <td>
-                        <div class="fw-bold text-uppercase">${inv.investigado_nome}</div>
-                        <small class="text-danger">Vulgo: ${inv.investigado_vulgo || 'DESCONHECIDO'}</small>
-                    </td>
-                    <td><code>${inv.investigado_doc}</code></td>
-                    <td><i class="fa-solid fa-id-badge me-1"></i> ${inv.policial_nome}</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-dark me-1" onclick="visualizar(${index})"><i class="fa-solid fa-file-lines"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="remover(${index})"><i class="fa-solid fa-trash-can"></i></button>
-                    </td>
-                </tr>`;
-            });
         }
 
-        function abrirCadastro() {
+        window.abrirCadastro = function () {
             Swal.fire({
                 title: '<span style="color: #d90429">REGISTRO DE INQUÉRITO</span>',
                 width: '850px',
-                confirmButtonText: 'SALVAR NO ARQUIVO',
+                confirmButtonText: 'SALVAR NO FIREBASE',
                 confirmButtonColor: '#1a1a1a',
                 showCancelButton: true,
                 cancelButtonText: 'DESCARTAR',
@@ -253,19 +288,16 @@
                         <div class="col-md-6"><label class="small fw-bold">FILIAÇÃO</label><input id="investigado_filiacao" class="form-control mb-2"></div>
                         <div class="col-md-6"><label class="small fw-bold">ENDEREÇO</label><input id="investigado_endereco" class="form-control mb-2"></div>
                     </div>
-
                     <div class="section-title">Testemunhas e Vítimas</div>
                     <div class="row g-2">
                         <div class="col-md-6"><input id="vitima_nome" class="form-control mb-2" placeholder="Nome Vítima"></div>
-                        <div class="col-md-6"><input id="vitima_doc" class="form-control mb-2" placeholder="Doc Vítima"></div>
+                        <div class="col-md-6"><input id="vitima_doc" class="form-control mb-2" placeholder="Doc Vítima (Passaporte)"></div>
                         <div class="col-md-6"><input id="testemunha_nome" class="form-control mb-2" placeholder="Nome Testemunha"></div>
-                        <div class="col-md-6"><input id="testemunha_doc" class="form-control mb-2" placeholder="Doc Testemunha"></div>
+                        <div class="col-md-6"><input id="testemunha_doc" class="form-control mb-2" placeholder="Doc Testemunha (Passaporte)"></div>
                     </div>
-
                     <div class="section-title">Histórico dos Fatos</div>
-                    <textarea id="historico" class="form-control mb-2" rows="4" placeholder="Relatório técnico circunstanciado..."></textarea>
-                    <input id="fotos" class="form-control mb-2" placeholder="Links de Provas (Imagens/Vídeos)">
-
+                    <textarea id="historico" class="form-control mb-2" rows="4" placeholder="Relatório técnico..."></textarea>
+                    <input id="fotos" class="form-control mb-2" placeholder="Links de Provas (Separe por espaço ou vírgula)">
                     <div class="section-title">Oficial de Caso</div>
                     <div class="row g-2">
                         <div class="col-md-4"><input id="policial_nome" class="form-control mb-2" placeholder="Nome do Agente"></div>
@@ -276,20 +308,21 @@
                 preConfirm: () => {
                     const collect = (id) => document.getElementById(id).value;
                     const dados = {
+                        dataRegistro: Timestamp.now(),
+                        fotos: collect("fotos"),
+                        historico: collect("historico"),
+                        investigado_doc: collect("investigado_doc"),
+                        investigado_endereco: collect("investigado_endereco"),
+                        investigado_filiacao: collect("investigado_filiacao"),
                         investigado_nome: collect("investigado_nome"),
                         investigado_vulgo: collect("investigado_vulgo"),
-                        investigado_doc: collect("investigado_doc"),
-                        investigado_filiacao: collect("investigado_filiacao"),
-                        investigado_endereco: collect("investigado_endereco"),
-                        vitima_nome: collect("vitima_nome"),
-                        vitima_doc: collect("vitima_doc"),
-                        testemunha_nome: collect("testemunha_nome"),
-                        testemunha_doc: collect("testemunha_doc"),
-                        historico: collect("historico"),
-                        fotos: collect("fotos"),
-                        policial_nome: collect("policial_nome"),
                         policial_doc: collect("policial_doc"),
-                        policial_unidade: collect("policial_unidade")
+                        policial_nome: collect("policial_nome"),
+                        policial_unidade: collect("policial_unidade"),
+                        testemunha_doc: collect("testemunha_doc"),
+                        testemunha_nome: collect("testemunha_nome"),
+                        vitima_doc: collect("vitima_doc"),
+                        vitima_nome: collect("vitima_nome")
                     };
 
                     if (!dados.investigado_nome || !dados.investigado_doc || !dados.historico || !dados.policial_nome) {
@@ -298,36 +331,49 @@
                     }
                     return dados;
                 }
-            }).then((result) => {
+            }).then(async (result) => {
                 if (result.isConfirmed) {
-                    investigacoes.push(result.value);
-                    salvar();
-                    atualizarTabela();
-                    Swal.fire({icon: 'success', title: 'ARQUIVADO', confirmButtonColor: '#1a1a1a'});
+                    try {
+                        await addDoc(colRef, result.value);
+                        Swal.fire({ icon: 'success', title: 'GRAVADO NO CLOUD', confirmButtonColor: '#1a1a1a' });
+                        atualizarTabela();
+                    } catch (e) {
+                        Swal.fire('Erro', 'Falha ao salvar no banco.', 'error');
+                    }
                 }
             });
         }
 
-        function remover(index) {
+        async function remover(id) {
             Swal.fire({
-                title: 'ELIMINAR REGISTRO?',
-                text: "Esta ação é irreversível no banco de dados local.",
+                title: 'ELIMINAR DO BANCO?',
+                text: "Esta ação é irreversível.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d90429',
-                cancelButtonColor: '#1a1a1a',
                 confirmButtonText: 'CONFIRMAR EXCLUSÃO'
-            }).then((result) => {
+            }).then(async (result) => {
                 if (result.isConfirmed) {
-                    investigacoes.splice(index, 1);
-                    salvar();
-                    atualizarTabela();
+                    try {
+                        await deleteDoc(doc(db, "investigacoes", id));
+                        atualizarTabela();
+                    } catch (e) { console.error(e); }
                 }
             });
         }
 
-        function visualizar(index) {
-            let inv = investigacoes[index];
+        function visualizar(id) {
+            const inv = investigacoesLocais.find(i => i.idFirestore === id);
+            
+            // Processar links de fotos
+            let botoesFotos = '<span class="text-muted">Nenhuma evidência anexada.</span>';
+            if (inv.fotos && inv.fotos.trim() !== "") {
+                const links = inv.fotos.split(/[\s,]+/);
+                botoesFotos = links.map((link, index) => {
+                    return `<a href="${link}" target="_blank" class="btn btn-sm btn-outline-danger m-1"><i class="fa-solid fa-image me-1"></i> Ver Foto ${index + 1}</a>`;
+                }).join('');
+            }
+
             Swal.fire({
                 title: 'RELATÓRIO DE INVESTIGAÇÃO',
                 width: '750px',
@@ -336,24 +382,27 @@
                 <div class="text-start p-3 border-top" style="font-size: 0.9rem;">
                     <div class="row">
                         <div class="col-6">
-                            <h6 class="fw-bold border-bottom pb-1">ALVO PRINCIPAL</h6>
+                            <h6 class="fw-bold border-bottom pb-1 text-danger">ALVO PRINCIPAL</h6>
                             <p class="mb-1"><strong>NOME:</strong> ${inv.investigado_nome}</p>
-                            <p class="mb-1"><strong>VULGO:</strong> <span class="text-danger">${inv.investigado_vulgo || 'N/A'}</span></p>
+                            <p class="mb-1"><strong>VULGO:</strong> ${inv.investigado_vulgo || 'N/A'}</p>
                             <p class="mb-1"><strong>PASSAPORTE:</strong> ${inv.investigado_doc}</p>
                         </div>
                         <div class="col-6">
-                            <h6 class="fw-bold border-bottom pb-1">ENVOLVIDOS</h6>
-                            <p class="mb-1"><strong>VÍTIMA:</strong> ${inv.vitima_nome || 'N/A'}</p>
-                            <p class="mb-1"><strong>TESTEMUNHA:</strong> ${inv.testemunha_nome || 'N/A'}</p>
+                            <h6 class="fw-bold border-bottom pb-1 text-primary">ENVOLVIDOS</h6>
+                            <p class="mb-1"><strong>VÍTIMA:</strong> ${inv.vitima_nome || 'N/A'} <br><small>(Passaporte: ${inv.vitima_doc || 'N/A'})</small></p>
+                            <p class="mb-1"><strong>TESTEMUNHA:</strong> ${inv.testemunha_nome || 'N/A'} <br><small>(Passaporte: ${inv.testemunha_doc || 'N/A'})</small></p>
                         </div>
                     </div>
+                    <hr>
+                    <h6 class="fw-bold text-dark">EVIDÊNCIAS FOTOGRÁFICAS</h6>
+                    <div class="mb-3 d-flex flex-wrap">${botoesFotos}</div>
                     <hr>
                     <h6 class="fw-bold">RELATÓRIO TÉCNICO</h6>
                     <p class="p-3 bg-light rounded shadow-sm" style="white-space: pre-wrap;">${inv.historico}</p>
                     <hr>
                     <div class="d-flex justify-content-between align-items-center bg-dark text-white p-2 rounded">
                         <span>AGENTE: ${inv.policial_nome}</span>
-                        <span>UNIDADE: ${inv.policial_unidade || 'PCESP'}</span>
+                        <span>DOC: ${inv.policial_doc}</span>
                     </div>
                 </div>`
             });
