@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCESP - Sistema de Inteligência</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-bg: #f1f5f9;
+            --sidebar-bg: #1a1a1a;
+            --police-red: #d90429;
+            --text-main: #000000;
+            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--primary-bg); color: var(--text-main); overflow-x: hidden; }
+        .wrapper { display: flex; min-height: 100vh; }
+        #sidebar { min-width: 260px; max-width: 260px; background: var(--sidebar-bg); color: #fff; z-index: 1000; }
+        .sidebar-header { padding: 2.5rem 1.5rem; text-align: center; border-bottom: 2px solid var(--police-red); }
+        .sidebar-header h3 { font-family: 'Poppins', sans-serif; font-size: 1.2rem; color: #ffffff; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        #sidebar ul li a { padding: 1rem 1.5rem; display: block; color: #cccccc; text-decoration: none; transition: 0.2s; font-weight: 500; }
+        #sidebar ul li a:hover, #sidebar ul li a.active { color: #fff; background: #2a2a2a; border-left: 5px solid var(--police-red); }
+        #content { width: 100%; padding: 2rem; display: flex; flex-direction: column; }
+        .top-nav { background: #fff; padding: 1.2rem 2rem; border-radius: 8px; box-shadow: var(--card-shadow); margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; border-left: 8px solid var(--sidebar-bg); }
+
+        .btn-police { background-color: var(--police-red); color: #ffffff; font-weight: 600; border: none; padding: 0.7rem 1.4rem; border-radius: 6px; transition: 0.3s; text-transform: uppercase; font-size: 0.8rem; }
+        .btn-police:hover { background-color: #b90422; box-shadow: 0 4px 12px rgba(217, 4, 41, 0.3); color: #fff; }
+
+        /* Wanted Card Style */
+        .wanted-card { border: 2px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; transition: 0.3s; position: relative; }
+        .wanted-card:hover { border-color: var(--police-red); transform: translateY(-5px); }
+        .wanted-badge { position: absolute; top: 10px; right: 10px; background: var(--police-red); color: white; padding: 5px 12px; font-weight: 900; transform: rotate(5deg); box-shadow: 2px 2px 5px rgba(0,0,0,0.3); font-size: 0.75rem; }
+        .wanted-img { width: 100%; height: 280px; object-fit: cover; background: #eee; }
+        .wanted-info { padding: 15px; text-align: center; }
+        
+        footer { margin-top: auto; padding: 2rem 0; text-align: center; color: #1a1a1a; font-size: 0.85rem; border-top: 1px solid #ddd; }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>POLÍCIA CIVIL</h3>
+                <small style="color: var(--police-red); font-weight: bold; letter-spacing: 1px;">ESTADO DE SÃO PAULO</small>
+            </div>
+            <ul class="list-unstyled components">
+                <li><a href="index.html"><i class="fa-solid fa-shield-halved"></i> Dashboard</a></li>
+                <li><a href="procurados.html" class="active"><i class="fa-solid fa-user-secret"></i> Procurados</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="top-nav">
+                <h4 class="m-0 fw-bold"><i class="fa-solid fa-users-slash me-2"></i>Lista de Procurados</h4>
+                <button class="btn btn-police" onclick="abrirCadastroProcurado()">
+                    <i class="fa-solid fa-user-plus me-2"></i> Adicionar Alvo
+                </button>
+            </div>
+
+            <div class="row g-4" id="gridProcurados">
+                </div>
+
+            <footer>
+                Desenvolvido por <strong>Kaio Andrião Dalfior</strong> &copy; 2025<br>
+                <span class="badge bg-dark">ACESSO RESTRITO - GTA RP</span>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        let procurados = JSON.parse(localStorage.getItem("procuradosGTA")) || [];
+
+        function salvar() { localStorage.setItem("procuradosGTA", JSON.stringify(procurados)); }
+
+        function atualizarGrid() {
+            let grid = document.getElementById("gridProcurados");
+            grid.innerHTML = procurados.length ? "" : '<div class="col-12 text-center py-5 text-muted">Nenhum alvo na lista de procurados.</div>';
+
+            procurados.forEach((p, index) => {
+                grid.innerHTML += `
+                <div class="col-md-3">
+                    <div class="wanted-card">
+                        <div class="wanted-badge">WANTED</div>
+                        <img src="${p.foto || 'https://via.placeholder.com/300x400?text=SEM+FOTO'}" class="wanted-img">
+                        <div class="wanted-info">
+                            <h5 class="fw-bold text-uppercase m-0">${p.nome}</h5>
+                            <p class="text-danger fw-bold mb-1">"${p.vulgo || 'S/V'}"</p>
+                            <small class="text-muted d-block mb-3">ID: ${p.doc}</small>
+                            <button class="btn btn-sm btn-dark w-100" onclick="removerProcurado(${index})">Remover Lista</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function abrirCadastroProcurado() {
+            Swal.fire({
+                title: '<span style="color: #d90429">ADICIONAR PROCURADO</span>',
+                confirmButtonColor: '#1a1a1a',
+                showCancelButton: true,
+                html: `
+                <div class="text-start">
+                    <input id="p_nome" class="form-control mb-2" placeholder="Nome Completo">
+                    <input id="p_vulgo" class="form-control mb-2" placeholder="Vulgo">
+                    <input id="p_doc" class="form-control mb-2" placeholder="Passaporte">
+                    <input id="p_foto" class="form-control" placeholder="Link da Foto (Imgur/Discord)">
+                </div>`,
+                preConfirm: () => {
+                    const collect = (id) => document.getElementById(id).value;
+                    if (!collect("p_nome")) return Swal.showValidationMessage("Nome obrigatório");
+                    return { nome: collect("p_nome"), vulgo: collect("p_vulgo"), doc: collect("p_doc"), foto: collect("p_foto") };
+                }
+            }).then(r => { if(r.isConfirmed) { procurados.push(r.value); salvar(); atualizarGrid(); }});
+        }
+
+        function removerProcurado(i) {
+            procurados.splice(i, 1); salvar(); atualizarGrid();
+        }
+
+        atualizarGrid();
+    </script>
+</body>
+
+</html>

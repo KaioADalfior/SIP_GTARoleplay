@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCESP - Sistema de Inteligência</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary-bg: #f1f5f9;
+            --sidebar-bg: #1a1a1a; /* Preto Policial */
+            --police-red: #d90429;  /* Vermelho Alerta */
+            --text-main: #000000;
+            --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        .wrapper { display: flex; min-height: 100vh; }
+
+        /* Sidebar - Preto */
+        #sidebar {
+            min-width: 260px;
+            max-width: 260px;
+            background: var(--sidebar-bg);
+            color: #fff;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            border-bottom: 2px solid var(--police-red);
+        }
+
+        .sidebar-header h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            color: #ffffff;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #sidebar ul li a {
+            padding: 1rem 1.5rem;
+            display: block;
+            color: #cccccc;
+            text-decoration: none;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+        #sidebar ul li a:hover, #sidebar ul li a.active {
+            color: #fff;
+            background: #2a2a2a;
+            border-left: 5px solid var(--police-red);
+        }
+
+        /* Content Area */
+        #content { width: 100%; padding: 2rem; display: flex; flex-direction: column; }
+
+        .top-nav {
+            background: #fff;
+            padding: 1.2rem 2rem;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 8px solid var(--sidebar-bg);
+        }
+
+        /* Card Branco */
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            background: #fff;
+        }
+
+        .card-header {
+            background: #fff;
+            border-bottom: 2px solid var(--primary-bg);
+            padding: 1.25rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        /* Botão Vermelho Laravel Style */
+        .btn-police {
+            background-color: var(--police-red);
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 6px;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .btn-police:hover {
+            background-color: #b90422;
+            box-shadow: 0 4px 12px rgba(217, 4, 41, 0.3);
+            color: #fff;
+        }
+
+        .section-title {
+            font-weight: 800;
+            color: #000;
+            margin: 25px 0 10px 0;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--police-red);
+            display: inline-block;
+            padding-bottom: 3px;
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            color: #1a1a1a;
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary-bg);
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 2rem 0;
+            text-align: center;
+            color: #1a1a1a;
+            font-size: 0.85rem;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrapper">
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>POLÍCIA CIVIL</h3>
+                <small style="color: var(--police-red); font-weight: bold; letter-spacing: 1px;">ESTADO DE SÃO PAULO</small>
+            </div>
+            <ul class="list-unstyled components">
+                <li><a href="index.html" class="active"><i class="fa-solid fa-shield-halved"></i> Dashboard</a></li>
+                <li><a href="procurados.html"><i class="fa-solid fa-user-secret"></i> Procurados</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="top-nav">
+                <h4 class="m-0 fw-bold"><i class="fa-solid fa-magnifying-glass me-2"></i>S.I.P - Sistema de Investigação</h4>
+                <button class="btn btn-police" onclick="abrirCadastro()">
+                    <i class="fa-solid fa-plus me-2"></i> Novo Registro
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><i class="fa-solid fa-list me-2"></i>Inquéritos em Andamento</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Investigado</th>
+                                    <th>Documento</th>
+                                    <th>Agente Requerente</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaInvestigacoes"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                Desenvolvido por <strong>Kaio Andrião Dalfior</strong> &copy; 2025<br>
+                <span class="badge bg-dark">ACESSO RESTRITO - GTA RP</span>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        let investigacoes = JSON.parse(localStorage.getItem("investigacoesGTA")) || [];
+
+        function salvar() {
+            localStorage.setItem("investigacoesGTA", JSON.stringify(investigacoes));
+        }
+
+        function atualizarTabela() {
+            let tbody = document.getElementById("tabelaInvestigacoes");
+            tbody.innerHTML = "";
+
+            if(investigacoes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted small">Nenhum inquérito registrado no sistema.</td></tr>`;
+                return;
+            }
+
+            investigacoes.forEach((inv, index) => {
+                tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge bg-dark">#${index + 101}</span></td>
+                    <td>
+                        <div class="fw-bold text-uppercase">${inv.investigado_nome}</div>
+                        <small class="text-danger">Vulgo: ${inv.investigado_vulgo || 'DESCONHECIDO'}</small>
+                    </td>
+                    <td><code>${inv.investigado_doc}</code></td>
+                    <td><i class="fa-solid fa-id-badge me-1"></i> ${inv.policial_nome}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-dark me-1" onclick="visualizar(${index})"><i class="fa-solid fa-file-lines"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="remover(${index})"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function abrirCadastro() {
+            Swal.fire({
+                title: '<span style="color: #d90429">REGISTRO DE INQUÉRITO</span>',
+                width: '850px',
+                confirmButtonText: 'SALVAR NO ARQUIVO',
+                confirmButtonColor: '#1a1a1a',
+                showCancelButton: true,
+                cancelButtonText: 'DESCARTAR',
+                html: `
+                <div class="text-start p-2" style="max-height: 450px; overflow-y: auto; font-size: 0.9rem;">
+                    <div class="section-title">Identificação do Suspeito</div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><label class="small fw-bold">NOME COMPLETO</label><input id="investigado_nome" class="form-control mb-2"></div>
+                        <div class="col-md-3"><label class="small fw-bold">VULGO</label><input id="investigado_vulgo" class="form-control mb-2"></div>
+                        <div class="col-md-3"><label class="small fw-bold">PASSAPORTE</label><input id="investigado_doc" class="form-control mb-2"></div>
+                        <div class="col-md-6"><label class="small fw-bold">FILIAÇÃO</label><input id="investigado_filiacao" class="form-control mb-2"></div>
+                        <div class="col-md-6"><label class="small fw-bold">ENDEREÇO</label><input id="investigado_endereco" class="form-control mb-2"></div>
+                    </div>
+
+                    <div class="section-title">Testemunhas e Vítimas</div>
+                    <div class="row g-2">
+                        <div class="col-md-6"><input id="vitima_nome" class="form-control mb-2" placeholder="Nome Vítima"></div>
+                        <div class="col-md-6"><input id="vitima_doc" class="form-control mb-2" placeholder="Doc Vítima"></div>
+                        <div class="col-md-6"><input id="testemunha_nome" class="form-control mb-2" placeholder="Nome Testemunha"></div>
+                        <div class="col-md-6"><input id="testemunha_doc" class="form-control mb-2" placeholder="Doc Testemunha"></div>
+                    </div>
+
+                    <div class="section-title">Histórico dos Fatos</div>
+                    <textarea id="historico" class="form-control mb-2" rows="4" placeholder="Relatório técnico circunstanciado..."></textarea>
+                    <input id="fotos" class="form-control mb-2" placeholder="Links de Provas (Imagens/Vídeos)">
+
+                    <div class="section-title">Oficial de Caso</div>
+                    <div class="row g-2">
+                        <div class="col-md-4"><input id="policial_nome" class="form-control mb-2" placeholder="Nome do Agente"></div>
+                        <div class="col-md-4"><input id="policial_doc" class="form-control mb-2" placeholder="Distintivo/Passaporte"></div>
+                        <div class="col-md-4"><input id="policial_unidade" class="form-control mb-2" placeholder="Unidade Operacional"></div>
+                    </div>
+                </div>`,
+                preConfirm: () => {
+                    const collect = (id) => document.getElementById(id).value;
+                    const dados = {
+                        investigado_nome: collect("investigado_nome"),
+                        investigado_vulgo: collect("investigado_vulgo"),
+                        investigado_doc: collect("investigado_doc"),
+                        investigado_filiacao: collect("investigado_filiacao"),
+                        investigado_endereco: collect("investigado_endereco"),
+                        vitima_nome: collect("vitima_nome"),
+                        vitima_doc: collect("vitima_doc"),
+                        testemunha_nome: collect("testemunha_nome"),
+                        testemunha_doc: collect("testemunha_doc"),
+                        historico: collect("historico"),
+                        fotos: collect("fotos"),
+                        policial_nome: collect("policial_nome"),
+                        policial_doc: collect("policial_doc"),
+                        policial_unidade: collect("policial_unidade")
+                    };
+
+                    if (!dados.investigado_nome || !dados.investigado_doc || !dados.historico || !dados.policial_nome) {
+                        Swal.showValidationMessage("Erro: Campos de identificação e histórico são obrigatórios.");
+                        return false;
+                    }
+                    return dados;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    investigacoes.push(result.value);
+                    salvar();
+                    atualizarTabela();
+                    Swal.fire({icon: 'success', title: 'ARQUIVADO', confirmButtonColor: '#1a1a1a'});
+                }
+            });
+        }
+
+        function remover(index) {
+            Swal.fire({
+                title: 'ELIMINAR REGISTRO?',
+                text: "Esta ação é irreversível no banco de dados local.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d90429',
+                cancelButtonColor: '#1a1a1a',
+                confirmButtonText: 'CONFIRMAR EXCLUSÃO'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    investigacoes.splice(index, 1);
+                    salvar();
+                    atualizarTabela();
+                }
+            });
+        }
+
+        function visualizar(index) {
+            let inv = investigacoes[index];
+            Swal.fire({
+                title: 'RELATÓRIO DE INVESTIGAÇÃO',
+                width: '750px',
+                confirmButtonColor: '#1a1a1a',
+                html: `
+                <div class="text-start p-3 border-top" style="font-size: 0.9rem;">
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="fw-bold border-bottom pb-1">ALVO PRINCIPAL</h6>
+                            <p class="mb-1"><strong>NOME:</strong> ${inv.investigado_nome}</p>
+                            <p class="mb-1"><strong>VULGO:</strong> <span class="text-danger">${inv.investigado_vulgo || 'N/A'}</span></p>
+                            <p class="mb-1"><strong>PASSAPORTE:</strong> ${inv.investigado_doc}</p>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="fw-bold border-bottom pb-1">ENVOLVIDOS</h6>
+                            <p class="mb-1"><strong>VÍTIMA:</strong> ${inv.vitima_nome || 'N/A'}</p>
+                            <p class="mb-1"><strong>TESTEMUNHA:</strong> ${inv.testemunha_nome || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="fw-bold">RELATÓRIO TÉCNICO</h6>
+                    <p class="p-3 bg-light rounded shadow-sm" style="white-space: pre-wrap;">${inv.historico}</p>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center bg-dark text-white p-2 rounded">
+                        <span>AGENTE: ${inv.policial_nome}</span>
+                        <span>UNIDADE: ${inv.policial_unidade || 'PCESP'}</span>
+                    </div>
+                </div>`
+            });
+        }
+
+        atualizarTabela();
+    </script>
+</body>
+
+</html>
