@@ -33,8 +33,7 @@
         .btn-police { background-color: var(--police-red); color: #ffffff; font-weight: 600; border: none; padding: 0.7rem 1.4rem; border-radius: 6px; transition: 0.3s; text-transform: uppercase; font-size: 0.8rem; }
         .btn-police:hover { background-color: #b90422; box-shadow: 0 4px 12px rgba(217, 4, 41, 0.3); color: #fff; }
 
-        /* Wanted Card Style */
-        .wanted-card { border: 2px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; transition: 0.3s; position: relative; }
+        .wanted-card { border: 2px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; transition: 0.3s; position: relative; height: 100%; }
         .wanted-card:hover { border-color: var(--police-red); transform: translateY(-5px); }
         .wanted-badge { position: absolute; top: 10px; right: 10px; background: var(--police-red); color: white; padding: 5px 12px; font-weight: 900; transform: rotate(5deg); box-shadow: 2px 2px 5px rgba(0,0,0,0.3); font-size: 0.75rem; }
         .wanted-img { width: 100%; height: 280px; object-fit: cover; background: #eee; }
@@ -75,54 +74,123 @@
         </div>
     </div>
 
-    <script>
-        let procurados = JSON.parse(localStorage.getItem("procuradosGTA")) || [];
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, Timestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        function salvar() { localStorage.setItem("procuradosGTA", JSON.stringify(procurados)); }
+        // Configurações do seu Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm3SpEYN7aqUheSL5ViiCMD58HPEd5Gec",
+            authDomain: "sistema-policial-rp.firebaseapp.com",
+            projectId: "sistema-policial-rp",
+            storageBucket: "sistema-policial-rp.firebasestorage.app",
+            messagingSenderId: "830142153757",
+            appId: "1:830142153757:web:e675013c180fbaac9ab2f4"
+        };
 
-        function atualizarGrid() {
-            let grid = document.getElementById("gridProcurados");
-            grid.innerHTML = procurados.length ? "" : '<div class="col-12 text-center py-5 text-muted">Nenhum alvo na lista de procurados.</div>';
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const colRef = collection(db, "procurados");
 
-            procurados.forEach((p, index) => {
-                grid.innerHTML += `
-                <div class="col-md-3">
-                    <div class="wanted-card">
-                        <div class="wanted-badge">WANTED</div>
-                        <img src="${p.foto || 'https://via.placeholder.com/300x400?text=SEM+FOTO'}" class="wanted-img">
-                        <div class="wanted-info">
-                            <h5 class="fw-bold text-uppercase m-0">${p.nome}</h5>
-                            <p class="text-danger fw-bold mb-1">"${p.vulgo || 'S/V'}"</p>
-                            <small class="text-muted d-block mb-3">ID: ${p.doc}</small>
-                            <button class="btn btn-sm btn-dark w-100" onclick="removerProcurado(${index})">Remover Lista</button>
+        async function atualizarGrid() {
+            const grid = document.getElementById("gridProcurados");
+            grid.innerHTML = '<div class="col-12 text-center py-5">Carregando banco de dados...</div>';
+
+            try {
+                const q = query(colRef, orderBy("dataRegistro", "desc"));
+                const querySnapshot = await getDocs(q);
+                grid.innerHTML = "";
+
+                if (querySnapshot.empty) {
+                    grid.innerHTML = '<div class="col-12 text-center py-5 text-muted">Nenhum alvo na lista de procurados.</div>';
+                    return;
+                }
+
+                querySnapshot.forEach((docSnapshot) => {
+                    const p = docSnapshot.data();
+                    const id = docSnapshot.id;
+
+                    grid.innerHTML += `
+                    <div class="col-md-3">
+                        <div class="wanted-card">
+                            <div class="wanted-badge">WANTED</div>
+                            <img src="${p.foto || 'https://via.placeholder.com/300x400?text=SEM+FOTO'}" class="wanted-img">
+                            <div class="wanted-info">
+                                <h5 class="fw-bold text-uppercase m-0">${p.nome}</h5>
+                                <p class="text-danger fw-bold mb-1">"${p.vulgo || 'S/V'}"</p>
+                                <small class="text-muted d-block mb-3">ID: ${p.doc}</small>
+                                <button class="btn btn-sm btn-dark w-100" onclick="removerProcurado('${id}')">Remover Lista</button>
+                            </div>
                         </div>
-                    </div>
-                </div>`;
-            });
+                    </div>`;
+                });
+            } catch (e) {
+                console.error("Erro ao carregar procurados: ", e);
+                grid.innerHTML = '<div class="col-12 text-center py-5 text-danger">Erro ao conectar com o servidor.</div>';
+            }
         }
 
-        function abrirCadastroProcurado() {
+        window.abrirCadastroProcurado = function () {
             Swal.fire({
                 title: '<span style="color: #d90429">ADICIONAR PROCURADO</span>',
                 confirmButtonColor: '#1a1a1a',
                 showCancelButton: true,
+                cancelButtonText: 'CANCELAR',
                 html: `
                 <div class="text-start">
-                    <input id="p_nome" class="form-control mb-2" placeholder="Nome Completo">
-                    <input id="p_vulgo" class="form-control mb-2" placeholder="Vulgo">
-                    <input id="p_doc" class="form-control mb-2" placeholder="Passaporte">
-                    <input id="p_foto" class="form-control" placeholder="Link da Foto (Imgur/Discord)">
+                    <label class="small fw-bold">NOME COMPLETO</label>
+                    <input id="p_nome" class="form-control mb-2" placeholder="Nome do Alvo">
+                    <label class="small fw-bold">VULGO / APELIDO</label>
+                    <input id="p_vulgo" class="form-control mb-2" placeholder="Ex: 'Pezão'">
+                    <label class="small fw-bold">PASSAPORTE (ID)</label>
+                    <input id="p_doc" class="form-control mb-2" placeholder="Número do documento">
+                    <label class="small fw-bold">URL DA FOTO</label>
+                    <input id="p_foto" class="form-control" placeholder="Link da imagem (Imgur/Discord)">
                 </div>`,
                 preConfirm: () => {
                     const collect = (id) => document.getElementById(id).value;
-                    if (!collect("p_nome")) return Swal.showValidationMessage("Nome obrigatório");
-                    return { nome: collect("p_nome"), vulgo: collect("p_vulgo"), doc: collect("p_doc"), foto: collect("p_foto") };
+                    if (!collect("p_nome") || !collect("p_doc")) {
+                        return Swal.showValidationMessage("Nome e Passaporte são obrigatórios");
+                    }
+                    return { 
+                        nome: collect("p_nome"), 
+                        vulgo: collect("p_vulgo"), 
+                        doc: collect("p_doc"), 
+                        foto: collect("p_foto"),
+                        dataRegistro: Timestamp.now()
+                    };
                 }
-            }).then(r => { if(r.isConfirmed) { procurados.push(r.value); salvar(); atualizarGrid(); }});
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await addDoc(colRef, result.value);
+                        Swal.fire({ icon: 'success', title: 'ALVO ADICIONADO', timer: 1500, showConfirmButton: false });
+                        atualizarGrid();
+                    } catch (e) {
+                        Swal.fire('Erro', 'Erro ao salvar no Firebase.', 'error');
+                    }
+                }
+            });
         }
 
-        function removerProcurado(i) {
-            procurados.splice(i, 1); salvar(); atualizarGrid();
+        window.removerProcurado = async function (id) {
+            Swal.fire({
+                title: 'REMOVER DA LISTA?',
+                text: "O alvo não será mais listado como procurado.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d90429',
+                confirmButtonText: 'REMOVER'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await deleteDoc(doc(db, "procurados", id));
+                        atualizarGrid();
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+            });
         }
 
         atualizarGrid();
