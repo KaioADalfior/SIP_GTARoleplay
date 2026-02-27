@@ -223,7 +223,7 @@
                     const userData = userDoc.data();
                     document.getElementById("userNameDisplay").innerText = `Agente: ${userData.nome}`;
 
-                    if (userData.cargo === "DelegadoGeral" && userData.cargo == "DelegadoTitular) {
+                    if (userData.cargo === "DelegadoGeral") {
                         document.getElementById("liAdmin").style.display = "block";
                         document.getElementById("liLogs").style.display = "block";
                         carregarUsuarios(); 
@@ -322,5 +322,4 @@
         }
     </script>
 </body>
-
 </html>
